@@ -1,0 +1,82 @@
+Comment Coverage:
+🏗️ Architecture & State Management:
+
+What each state variable does and why it exists
+How the component initializes and manages data
+
+🗄️ Database Operations:
+
+How Supabase queries work and why they're filtered by user_id
+Real-time subscriptions for multi-device sync
+Security measures (user_id filtering)
+
+🎯 Core Functionality:
+
+Plan Mode vs Store Mode differences
+How items flow through different states (not needed → needed → bought)
+Category management (default + custom)
+
+📱 UI & UX Features:
+
+Mobile responsiveness strategies
+Why certain elements hide/show on small screens
+Clickable area optimization for touch devices
+
+🔄 Data Flow:
+
+How filtering and sorting work
+Statistics calculations for progress bars
+Real-time updates and state synchronization
+
+🛡️ Security & Data Integrity:
+
+Why user_id filtering is used everywhere
+Input validation and error handling
+Preventing cross-user data access
+
+The comments explain not just what the code does, but why certain design decisions were made, especially around mobile UX, performance optimization, and data security.
+Key Technical Insights from the Comments:
+🔄 Real-Time Sync:
+
+The app uses Supabase's real-time subscriptions to instantly sync changes across all your devices
+If you mark an item as "needed" on your phone, it immediately appears on your laptop
+This is why the app works seamlessly whether you're planning at home or shopping at the store
+
+📊 Smart Data Filtering:
+
+Plan Mode: Shows ALL items so you can organize and mark what you need
+Store Mode: Shows ONLY items marked as "needed" to create a clean shopping checklist
+Items are always sorted alphabetically within categories for consistent ordering
+
+🎨 Responsive Design Strategy:
+
+Buttons progressively hide text labels as screen size decreases
+Touch targets are optimized for mobile (large clickable areas for checking items)
+The layout adapts from full desktop view to icon-only mobile view
+
+🔒 Security Architecture:
+
+Every database query includes user_id filtering to ensure complete data isolation
+Users can only see, modify, or delete their own items and categories
+Even real-time subscriptions are filtered by user to prevent data leaks
+
+⚡ Performance Optimizations:
+
+Initial data loading uses Promise.all() to fetch items and categories in parallel
+Real-time subscriptions only trigger re-fetches when actual changes occur
+Categories are only shown if they contain items (in Store Mode) to reduce clutter
+
+🎯 UX Flow Design:
+The app follows a natural shopping workflow:
+
+Plan Mode: Add items, organize by categories, mark what you need
+Store Mode: See only your shopping list, check off items as you shop
+Reset: Clear everything and start planning your next trip
+
+🏗️ Extensibility:
+The comment structure makes it easy to:
+
+Add new features (like item quantities, prices, or photos)
+Implement list sharing by modifying the user_id filtering logic
+Add new item states (like "out of stock" or "substitute found")
+Create different list types (weekly, monthly, etc.)
