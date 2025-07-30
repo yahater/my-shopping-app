@@ -785,7 +785,7 @@ export default function ShoppingList({ session }) {
               
               <div className="mb-6">
                 <p className="text-gray-600 mb-2">
-                  Are you sure you want to delete the category <strong>"{categoryToDelete}"</strong>?
+                  Are you sure you want to delete the category <strong>&quot;{categoryToDelete}&quot;</strong>?
                 </p>
                 <p className="text-sm text-red-600">
                   This will permanently delete the category and all items in it. This action cannot be undone.
