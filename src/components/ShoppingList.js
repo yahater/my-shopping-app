@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Check, ChevronDown, ChevronRight, Trash2, ShoppingCart, Home, LogOut } from 'lucide-react'
+import { Plus, Check, ChevronDown, ChevronRight, Trash2, ShoppingCart, Home, LogOut, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 /**
@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
  * - Create and manage shopping items organized by categories
  * - Toggle between "Plan Mode" (adding/organizing items) and "Store Mode" (checking off items while shopping)
  * - Add custom categories beyond the default ones
+ * - Delete custom categories (with confirmation)
  * - Real-time sync across devices using Supabase
  * 
  * MULTI-USER SUPPORT:
@@ -37,6 +38,9 @@ export default function ShoppingList({ session }) {
   // UI state for adding new categories
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
+  
+  // UI state for category deletion confirmation
+  const [categoryToDelete, setCategoryToDelete] = useState(null)
   
   // Loading state for initial data fetch
   const [loading, setLoading] = useState(true)
@@ -193,6 +197,52 @@ export default function ShoppingList({ session }) {
     } catch (error) {
       console.error('Error adding category:', error)
     }
+  }
+
+  /**
+   * Delete a custom category and all its items
+   * Only custom categories can be deleted (not default ones)
+   */
+  const deleteCategory = async (categoryName) => {
+    // Prevent deletion of default categories
+    if (defaultCategories.includes(categoryName)) {
+      alert('Default categories cannot be deleted')
+      return
+    }
+
+    try {
+      // First, delete all items in this category
+      const { error: itemsError } = await supabase
+        .from('shopping_items')
+        .delete()
+        .eq('category', categoryName)
+        .eq('user_id', session.user.id)
+
+      if (itemsError) throw itemsError
+
+      // Then, delete the category itself
+      const { error: categoryError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('name', categoryName)
+        .eq('user_id', session.user.id)
+
+      if (categoryError) throw categoryError
+
+      // Reset confirmation state and refresh data
+      setCategoryToDelete(null)
+      await Promise.all([fetchItems(), fetchCategories()])
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      setCategoryToDelete(null)
+    }
+  }
+
+  /**
+   * Check if a category can be deleted (is not a default category)
+   */
+  const canDeleteCategory = (categoryName) => {
+    return !defaultCategories.includes(categoryName)
   }
 
   // ============ ITEM MANAGEMENT ============
@@ -558,17 +608,17 @@ export default function ShoppingList({ session }) {
                 <div key={category} className="border border-gray-200 rounded-xl overflow-hidden">
                   
                   {/* ============ CATEGORY HEADER ============ */}
-                  <button
-                    onClick={() => toggleCategory(category)}
-                    className="w-full px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between text-left"
-                  >
-                    {/* Left side: expand/collapse arrow and category name */}
-                    <div className="flex items-center gap-2.5">
+                  <div className="w-full px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between">
+                    {/* Left side: expand/collapse button and category name */}
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className="flex items-center gap-2.5 flex-1 text-left"
+                    >
                       {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
                       <span className="font-medium text-gray-800 text-sm">{category}</span>
-                    </div>
+                    </button>
                     
-                    {/* Right side: completion stats and progress bar */}
+                    {/* Right side: completion stats, progress bar, and delete button */}
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-600">
                         {storeMode ? `${completed}/${total} bought` : `${completed}/${total} needed`}
@@ -584,8 +634,18 @@ export default function ShoppingList({ session }) {
                           />
                         </div>
                       )}
+                      {/* Delete category button - only show for custom categories in Plan Mode */}
+                      {!storeMode && canDeleteCategory(category) && (
+                        <button
+                          onClick={() => setCategoryToDelete(category)}
+                          className="p-1 text-gray-400 hover:text-red-500 transition-colors ml-1"
+                          title="Delete category"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
-                  </button>
+                  </div>
                   
                   {/* ============ CATEGORY CONTENT (when expanded) ============ */}
                   {!isCollapsed && (
@@ -708,6 +768,47 @@ export default function ShoppingList({ session }) {
             </div>
           )}
         </div>
+
+        {/* ============ DELETE CATEGORY CONFIRMATION DIALOG ============ */}
+        {categoryToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Delete Category</h2>
+                <button
+                  onClick={() => setCategoryToDelete(null)}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-gray-600 mb-2">
+                  Are you sure you want to delete the category <strong>"{categoryToDelete}"</strong>?
+                </p>
+                <p className="text-sm text-red-600">
+                  This will permanently delete the category and all items in it. This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setCategoryToDelete(null)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteCategory(categoryToDelete)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Delete Category
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
