@@ -44,7 +44,7 @@ export default function ShoppingList({ session }) {
   // ============ DEFAULT CATEGORIES ============
   // These categories are always available to all users
   const defaultCategories = [
-    'Refrigerated items', 'Bread', 'Fruit/Veggie', 'Frozen', 'Bulk', 'Household items'
+    'Refrigerated items', 'Bread', 'Fruit/Veg', 'Frozen', 'Bulk', 'Household items', 'Amy', 'Dm', 'Bipa'
   ]
 
   // ============ DATABASE OPERATIONS ============
